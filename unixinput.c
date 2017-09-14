@@ -331,7 +331,7 @@ static void input_sound(unsigned int sample_rate, unsigned int overlap,
   wanted.freq = sample_rate;
   wanted.format = AUDIO_S16SYS;
   wanted.channels = 1;
-  wanted.samples = 4096;
+  wanted.samples = 8192;
   wanted.callback = NULL;
 
   SDL_AudioSpec spec;
