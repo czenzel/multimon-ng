@@ -319,7 +319,7 @@ static void input_sound(unsigned int sample_rate, unsigned int overlap,
   unsigned int fbuf_cnt = 0;
   int i;
   int error;
-  short *sp;
+  short int sp;
 
   (void) ifname;
 
@@ -335,7 +335,7 @@ static void input_sound(unsigned int sample_rate, unsigned int overlap,
 
   for (;;) {
       // i = pa_simple_read(s, sp = buffer, sizeof(buffer), &error);
-      Uint16 buf[1024];
+      Uint16 buf[8192];
       i = SDL_DequeueAudio(devid_in, buf, sizeof(buf));
       if (i < 0 && errno != EAGAIN) {
           perror("read");
@@ -343,7 +343,8 @@ static void input_sound(unsigned int sample_rate, unsigned int overlap,
           exit(4);
       }
       i=sizeof(buffer);
-      if (i > 0) {
+      if (!i)
+        break;
 
       if (i > 0) {
           if(integer_only)
@@ -353,7 +354,7 @@ static void input_sound(unsigned int sample_rate, unsigned int overlap,
           else
           {
               for (; (unsigned int) i >= sizeof(buffer[0]); i -= sizeof(buffer[0]), sp++)
-                  fbuf[fbuf_cnt++] = (*sp) * (1.0/32768.0);
+                  fbuf[fbuf_cnt++] = (sp) * (1.0/32768.0);
               if (i)
                   fprintf(stderr, "warning: noninteger number of samples read\n");
           }
@@ -363,7 +364,6 @@ static void input_sound(unsigned int sample_rate, unsigned int overlap,
               fbuf_cnt = overlap;
           }
       }
-    }
   }
 }
 
