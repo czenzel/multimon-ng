@@ -323,7 +323,7 @@ static void input_sound(unsigned int sample_rate, unsigned int overlap,
 
   (void) ifname;
 
-  if ((SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)) {
+  if ((SDL_Init(SDL_INIT_VIDEO) < 0)) {
     printf("SDL_Init Faled: SDL_INIT_AUDIO\n");
     exit(-1);
   }
@@ -666,7 +666,7 @@ static const char usage_str[] = "\n"
         "   samples at the demodulator's input sampling rate, which is\n"
         "   usually 22050 Hz. Raw input is assumed and required if piped input is used.\n";
 
-int main(int argc, char *argv[])
+void main(int argc, char* argv[])
 {
     int c;
     int errflg = 0;
