@@ -323,7 +323,7 @@ static void input_sound(unsigned int sample_rate, unsigned int overlap,
 
   (void) ifname;
 
-  if ((SDL_Init(SDL_INIT_AUDIO) == -1)) {
+  if ((SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)) {
     printf("SDL_Init Faled: SDL_INIT_AUDIO\n");
     exit(-1);
   }
@@ -332,23 +332,24 @@ static void input_sound(unsigned int sample_rate, unsigned int overlap,
   wanted.freq = sample_rate;
   wanted.format = AUDIO_S16SYS;
   wanted.channels = 1;
-  wanted.samples = 8192;
+  wanted.samples = 4096;
   wanted.callback = NULL;
 
-  int ix, count = SDL_GetNumAudioDevices(1);
+  int ix, count = SDL_GetNumAudioDevices(SDL_TRUE);
   for (ix = 1; ix <= count; ++ix) {
     printf("Audio capture device %d: %s\n", ix, SDL_GetAudioDeviceName(ix - 1, 0));
   }
 
   SDL_AudioSpec spec;
-  SDL_AudioDeviceID devid_in = SDL_OpenAudioDevice(NULL, SDL_TRUE, &wanted, &spec, 0);
+  SDL_AudioDeviceID devid_in = SDL_OpenAudioDevice(NULL, SDL_TRUE, &wanted, &wanted, 0);
 
   if (devid_in == 0) { printf("SDL_Init failed: %s\n", SDL_GetError()); }
   else { printf("SDL_Init: Using %d for device\n", devid_in); }
 
+  SDL_PauseAudioDevice(devid_in, 0);
+
   for (;;) {
-      // i = pa_simple_read(s, sp = buffer, sizeof(buffer), &error);
-      Uint16 buf[8192];
+      Uint16 buf[1024];
       i = SDL_DequeueAudio(devid_in, buf, sizeof(buf));
       if (i < 0 && errno != EAGAIN) {
           perror("read");
