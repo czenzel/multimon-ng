@@ -3,3 +3,5 @@ multimon-ng
 multimon-ng.bc
 multimon-ng.html
 multimon-ng.js
+.qmake.stash
+

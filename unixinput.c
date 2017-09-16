@@ -47,7 +47,7 @@
 #include <pulse/simple.h>
 #include <pulse/error.h>
 #elif SDL_AUDIO
-#include <SDL2/SDL.h>
+#include <SDL.h>
 #elif WIN32_AUDIO
 //see win32_soundin.c
 #elif DUMMY_AUDIO
@@ -222,7 +222,7 @@ static void input_sound(unsigned int sample_rate, unsigned int overlap,
                 for (; i >= sizeof(buffer[0]); i -= sizeof(buffer[0]), sp++)
                     fbuf[fbuf_cnt++] = (*sp) * (1.0/32768.0);
                 if (i)
-                    fprintf(stderr, "warning: noninteger number of samples read\n");
+                   fprintf(stderr, "warning: noninteger number of samples read\n");
             }
             if (fbuf_cnt > overlap) {
                 process_buffer(fbuf, buffer, fbuf_cnt-overlap);
@@ -323,6 +323,11 @@ static void input_sound(unsigned int sample_rate, unsigned int overlap,
 
   (void) ifname;
 
+  if ((SDL_Init(SDL_INIT_AUDIO) == -1)) {
+    printf("SDL_Init Faled: SDL_INIT_AUDIO\n");
+    exit(-1);
+  }
+
   SDL_AudioSpec wanted;
   wanted.freq = sample_rate;
   wanted.format = AUDIO_S16SYS;
@@ -330,8 +335,16 @@ static void input_sound(unsigned int sample_rate, unsigned int overlap,
   wanted.samples = 8192;
   wanted.callback = NULL;
 
+  int ix, count = SDL_GetNumAudioDevices(1);
+  for (ix = 1; ix <= count; ++ix) {
+    printf("Audio capture device %d: %s\n", ix, SDL_GetAudioDeviceName(ix - 1, 0));
+  }
+
   SDL_AudioSpec spec;
   SDL_AudioDeviceID devid_in = SDL_OpenAudioDevice(NULL, SDL_TRUE, &wanted, &spec, 0);
+
+  if (devid_in == 0) { printf("SDL_Init failed: %s\n", SDL_GetError()); }
+  else { printf("SDL_Init: Using %d for device\n", devid_in); }
 
   for (;;) {
       // i = pa_simple_read(s, sp = buffer, sizeof(buffer), &error);
