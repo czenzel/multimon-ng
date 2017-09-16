@@ -8,16 +8,16 @@
 
 ####### Compiler, tools and options
 
-CC            = emcc
-CXX           = em++
-DEFINES       = -DMAX_VERBOSE_LEVEL=3 -DSDL_AUDIO -DCHARSET_UTF8
-CFLAGS        = -pipe -std=gnu99 -g -O2 -Wall -W $(DEFINES)
-CXXFLAGS      = -pipe -O2 -Wall -W $(DEFINES)
-INCPATH       = -I/usr/share/qt4/mkspecs/linux-g++-64 -I../../multimon-ng -I../../multimon-ng -I. -I/home/czenzel/SDL/output/include/SDL2
-LINK          = em++
+CC            = gcc
+CXX           = g++
+DEFINES       = -DMAX_VERBOSE_LEVEL=3 -DSDL_AUDIO -DCHARSET_UTF8 -DNO_X11
+CFLAGS        = -m64 -pipe -std=gnu99 -g -O2 -Wall -W $(DEFINES)
+CXXFLAGS      = -m64 -pipe -O2 -Wall -W $(DEFINES)
+INCPATH       = -I/usr/share/qt4/mkspecs/linux-g++-64 -I../../multimon-ng -I../../multimon-ng -I.
+LINK          = g++
 LFLAGS        = -m64 -Wl,-O1
-LIBS          = $(SUBLIBS)
-AR            = emar cqs
+LIBS          = $(SUBLIBS) `pkg-config --libs --cflags sdl2`
+AR            = ar cqs
 RANLIB        = 
 QMAKE         = /usr/lib/x86_64-linux-gnu/qt4/bin/qmake
 TAR           = tar -cf
@@ -168,7 +168,7 @@ first: all
 all: Makefile $(TARGET)
 
 $(TARGET):  $(OBJECTS)  
-	$(LINK) $(LFLAGS) -o $(TARGET) $(OBJECTS) /home/czenzel/SDL/output/lib/libSDL2.a $(OBJCOMP) $(LIBS)
+	$(LINK) $(LFLAGS) -o $(TARGET) $(OBJECTS) $(OBJCOMP) $(LIBS)
 
 Makefile: ../multimon-ng.pro  /usr/share/qt4/mkspecs/linux-g++-64/qmake.conf /usr/share/qt4/mkspecs/common/unix.conf \
 		/usr/share/qt4/mkspecs/common/linux.conf \

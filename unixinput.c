@@ -47,7 +47,7 @@
 #include <pulse/simple.h>
 #include <pulse/error.h>
 #elif SDL_AUDIO
-#include "SDL.h"
+#include <SDL2/SDL.h>
 #elif WIN32_AUDIO
 //see win32_soundin.c
 #elif DUMMY_AUDIO
@@ -57,10 +57,6 @@
 #include <sys/ioctl.h>
 //#include <sys/wait.h>
 #endif /* SUN_AUDIO */
-
-#ifdef __EMSCRIPTEN__
-#include <emscripten/emscripten.h>
-#endif
 
 #ifndef ONLY_RAW
 #include <sys/wait.h>
@@ -112,10 +108,6 @@ extern bool cw_disable_auto_threshold;
 extern bool cw_disable_auto_timing;
 
 void quit(void);
-
-#ifdef __EMSCRIPTEN__
-void emscripten_main_loop(void* arguments);
-#endif
 
 /* ---------------------------------------------------------------------- */
 
@@ -341,9 +333,7 @@ static void input_sound(unsigned int sample_rate, unsigned int overlap,
   SDL_AudioSpec spec;
   SDL_AudioDeviceID devid_in = SDL_OpenAudioDevice(NULL, SDL_TRUE, &wanted, &spec, 0);
 
-  #ifndef __EMSCRIPTEN__
   for (;;) {
-  #endif
       // i = pa_simple_read(s, sp = buffer, sizeof(buffer), &error);
       Uint16 buf[1024];
       i = SDL_DequeueAudio(devid_in, buf, sizeof(buf));
@@ -374,9 +364,7 @@ static void input_sound(unsigned int sample_rate, unsigned int overlap,
           }
       }
     }
-  #ifndef __EMSCRIPTEN__
   }
-  #endif
 }
 
 #else /* SUN_AUDIO */
@@ -664,17 +652,6 @@ static const char usage_str[] = "\n"
         "   samples at the demodulator's input sampling rate, which is\n"
         "   usually 22050 Hz. Raw input is assumed and required if piped input is used.\n";
 
-#ifdef __EMSCRIPTEN__
-
-// Emscripten arguments code
-typedef struct input_sound_arguments {
-  unsigned int sample_rate;
-  unsigned int overlap;
-  const char *ifname;
-} input_sound_arguments;
-
-#endif
-
 int main(int argc, char *argv[])
 {
     int c;
@@ -912,22 +889,12 @@ intypefound:
     }
 
     if (!strcmp(input_type, "hw")) {
-      #ifndef __EMSCRIPTEN__
         if ((argc - optind) >= 1)
             input_sound(sample_rate, overlap, argv[optind]);
         else
             input_sound(sample_rate, overlap, NULL);
         quit();
         exit(0);
-      #else
-        input_sound_arguments *arg = (input_sound_arguments *)malloc(sizeof(input_sound_arguments));
-        if ((argc - optind) >= 1) {
-          arg->ifname = argv[optind];
-        }
-        arg->sample_rate = sample_rate;
-        arg->overlap = overlap;
-        emscripten_set_main_loop_arg(emscripten_main_loop, arg, 0, 0);
-      #endif
     }
     if ((argc - optind) < 1) {
         (void)fprintf(stderr, "no source files specified\n");
@@ -940,14 +907,5 @@ intypefound:
     quit();
     exit(0);
 }
-
-#ifdef __EMSCRIPTEN__
-
-void emscripten_main_loop(void* arguments) {
-  input_sound_arguments* arg = arguments;
-  input_sound(arg->sample_rate, arg->overlap, arg->ifname);
-}
-
-#endif
 
 /* ---------------------------------------------------------------------- */
