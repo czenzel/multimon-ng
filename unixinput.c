@@ -329,9 +329,9 @@ static void input_sound(unsigned int sample_rate, unsigned int overlap,
   }
 
   SDL_AudioSpec wanted;
-  wanted.freq = sample_rate;
-  wanted.format = AUDIO_S16SYS;
-  wanted.channels = 1;
+  wanted.freq = 44100;
+  wanted.format = AUDIO_F32SYS;
+  wanted.channels = 2;
   wanted.samples = 4096;
   wanted.callback = NULL;
 
@@ -348,36 +348,32 @@ static void input_sound(unsigned int sample_rate, unsigned int overlap,
 
   SDL_PauseAudioDevice(devid_in, 0);
 
-  for (;;) {
-      Uint16 buf[1024];
-      i = SDL_DequeueAudio(devid_in, buf, sizeof(buf));
-      if (i < 0 && errno != EAGAIN) {
-          perror("read");
-          fprintf(stderr, "error 1\n");
-          exit(4);
-      }
-      i=sizeof(buffer);
-      if (!i)
-        break;
+  while (true) {
+    Uint8 buf[4096];
+    const Uint32 br = SDL_DequeueAudio(devid_in, buf, sizeof(buf));
 
-      if (i > 0) {
-          if(integer_only)
-      {
-              fbuf_cnt = i/sizeof(buffer[0]);
-      }
-          else
-          {
-              for (; (unsigned int) i >= sizeof(buffer[0]); i -= sizeof(buffer[0]), sp++)
-                  fbuf[fbuf_cnt++] = (sp) * (1.0/32768.0);
-              if (i)
-                  fprintf(stderr, "warning: noninteger number of samples read\n");
-          }
-          if (fbuf_cnt > overlap) {
-              process_buffer(fbuf, buffer, fbuf_cnt-overlap);
-              memmove(fbuf, fbuf+fbuf_cnt-overlap, overlap*sizeof(fbuf[0]));
-              fbuf_cnt = overlap;
-          }
-      }
+    SDL_AudioCVT cvt;
+    SDL_BuildAudioCVT(&cvt, AUDIO_F32SYS, 2, 44100, AUDIO_S16LSB, 1, 22050);
+
+    SDL_assert(cvt.needed);
+
+    cvt.len = sizeof(buf);
+    cvt.buf = (Uint8*)SDL_malloc(cvt.len * cvt.len_mult);
+
+    for (int j = 0; j < sizeof(buf); j++) 
+      cvt.buf[j] = buf[j];
+
+    SDL_ConvertAudio(&cvt);
+
+    float *fbuf = (float *)malloc(sizeof(float) * cvt.len_cvt);
+    for (int i = 0; i < cvt.len_cvt; i++)
+       fbuf[i] = cvt.buf[fbuf_cnt++] / 32768.0;
+
+    if (fbuf_cnt > overlap) {
+      process_buffer(fbuf, buffer, fbuf_cnt-overlap);
+      memmove(fbuf, fbuf+fbuf_cnt-overlap, overlap*sizeof(fbuf[0]));
+      fbuf_cnt = overlap;
+    }
   }
 }
 
